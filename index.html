@@ -9,42 +9,108 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin: 50px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+            height: 100vh;
+        }
+
+        .crypto-box {
+            border: 2px solid #333;
+            padding: 20px;
+            margin: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .crypto-name {
+            font-weight: bold;
+        }
+
+        .price {
+            font-size: 1.5em;
+        }
+
+        .return {
+            color: green;
+        }
+
+        .return.negative {
+            color: red;
+        }
+
+        .title {
+            font-size: 1.5em;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-<h1>Crypto Price Checker</h1>
+<div class="title">Crypto Price Checker</div>
 
-<div id="cryptoPrice"></div>
+<div class="crypto-box" id="btcBox"></div>
+<div class="crypto-box" id="ethBox"></div>
+<div class="crypto-box" id="xrpBox"></div>
+
+<button onclick="manualRefresh()">Refresh</button>
 
 <script>
-    // Function to fetch cryptocurrency price
-    async function getCryptoPrice(coin) {
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`);
+    // Function to fetch cryptocurrency price and historical data
+    async function getCryptoData(coin, days) {
+        const response = await fetch(`https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${days}`);
         const data = await response.json();
-        return data[coin].usd;
+        return data;
     }
 
-    // Function to update the content with current price
-    async function updateCryptoPrice() {
-        const cryptoDiv = document.getElementById('cryptoPrice');
-        const selectedCrypto = 'bitcoin'; // You can change this to your preferred cryptocurrency
+    // Function to update the content with current price and returns
+    async function updateCryptoBoxes() {
+        updateCryptoBox('btcBox', 'bitcoin');
+        updateCryptoBox('ethBox', 'ethereum');
+        updateCryptoBox('xrpBox', 'ripple');
+    }
+
+    // Function to update a specific crypto box
+    async function updateCryptoBox(boxId, coin) {
+        const cryptoBox = document.getElementById(boxId);
 
         try {
-            const price = await getCryptoPrice(selectedCrypto);
-            cryptoDiv.innerHTML = `<p>Current Price of ${selectedCrypto.toUpperCase()}: $${price}</p>`;
+            const currentPrice = await getCryptoData(coin, 1);
+            const oneDayReturn = calculateReturn(currentPrice.prices);
+
+            cryptoBox.innerHTML = `
+                <div class="crypto-name">${coin.toUpperCase()}</div>
+                <div class="price">$${currentPrice.prices[currentPrice.prices.length - 1][1].toFixed(2)}</div>
+                <div class="return ${oneDayReturn >= 0 ? '' : 'negative'}">1-Day: ${oneDayReturn.toFixed(2)}%</div>
+            `;
         } catch (error) {
-            cryptoDiv.innerHTML = `<p>Error fetching data. Please try again later.</p>`;
+            cryptoBox.innerHTML = `<p>Error fetching data for ${coin}. Please try again later.</p>`;
         }
     }
 
-    // Initial load
-    updateCryptoPrice();
+    // Function to calculate percentage return
+    function calculateReturn(prices) {
+        if (prices.length < 2) {
+            throw new Error("Insufficient data for return calculation.");
+        }
 
-    // Refresh every 60 seconds (adjust as needed)
-    setInterval(updateCryptoPrice, 60000);
+        const startPrice = prices[0][1];
+        const endPrice = prices[prices.length - 1][1];
+        return ((endPrice - startPrice) / startPrice) * 100;
+    }
+
+    // Function for manual refresh
+    function manualRefresh() {
+        updateCryptoBoxes();
+    }
+
+    // Initial load
+    updateCryptoBoxes();
+
+    // Auto-refresh every 60 seconds (adjust as needed)
+    setInterval(updateCryptoBoxes, 60000);
 </script>
 
 </body>
