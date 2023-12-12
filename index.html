@@ -4,12 +4,48 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Streamlit App</title>
+    <title>Crypto Price Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+    </style>
 </head>
 <body>
 
-<!-- Embedding the Streamlit app using an iframe -->
-<iframe src="https://your-username.github.io/your-repository-name" width="100%" height="800px"></iframe>
+<h1>Crypto Price Checker</h1>
+
+<div id="cryptoPrice"></div>
+
+<script>
+    // Function to fetch cryptocurrency price
+    async function getCryptoPrice(coin) {
+        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`);
+        const data = await response.json();
+        return data[coin].usd;
+    }
+
+    // Function to update the content with current price
+    async function updateCryptoPrice() {
+        const cryptoDiv = document.getElementById('cryptoPrice');
+        const selectedCrypto = 'bitcoin'; // You can change this to your preferred cryptocurrency
+
+        try {
+            const price = await getCryptoPrice(selectedCrypto);
+            cryptoDiv.innerHTML = `<p>Current Price of ${selectedCrypto.toUpperCase()}: $${price}</p>`;
+        } catch (error) {
+            cryptoDiv.innerHTML = `<p>Error fetching data. Please try again later.</p>`;
+        }
+    }
+
+    // Initial load
+    updateCryptoPrice();
+
+    // Refresh every 60 seconds (adjust as needed)
+    setInterval(updateCryptoPrice, 60000);
+</script>
 
 </body>
 </html>
